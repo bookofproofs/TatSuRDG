@@ -23,8 +23,8 @@ class TatSuRandomDerivation:
         self.init_rules()
         self.max_length_regex = max_length_regex
         sys.setrecursionlimit(recursion_limit)
-        print("TatSu Random Derivation Generator ({0}) initialized with {1}".format(self.version),
-              str(sys.getrecursionlimit()))
+        print("TatSu Random Derivation Generator ({0}) initialized with {1}".format(self.version,
+              str(sys.getrecursionlimit())))
 
     def random_derivation(self, rule):
         self._visit(rule)
