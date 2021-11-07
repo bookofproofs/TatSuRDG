@@ -12,10 +12,11 @@ class RuleInfo:
 
 
 class TatSuRandomDerivation:
-    version = "1.0.0"
+    version = "1.0.1"
 
-    def __init__(self, parser, max_length_regex=5, max_counter=50, recursion_limit=1000):
+    def __init__(self, parser, max_length_regex=5, max_counter=50, recursion_limit=1000, override_placeholders=dict()):
         self.parser = parser
+        self.override_placeholders = override_placeholders  # dict of rules whose derivations will be replaced by placeholder values
         self.max_counter = max_counter
         self.choice_rules = dict()
         self._visited = set()
@@ -28,6 +29,8 @@ class TatSuRandomDerivation:
 
     def random_derivation(self, rule):
         self._visit(rule)
+        if str(rule) in self.override_placeholders:
+            return str(self.override_placeholders[str(rule)])
         tatsu_rule_object = None
         if type(rule) is not str:
             # we have a tatsu grammars object
