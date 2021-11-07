@@ -3,6 +3,7 @@ import os
 import io
 import tatsu
 import unittest
+import scipy.stats as stats
 
 
 class TatSuRDTests(unittest.TestCase):
@@ -26,14 +27,34 @@ class TatSuRDTests(unittest.TestCase):
 
     def test_select_choice_n(self):
         counters = dict()
-        numb = 5
+        numb = 10
         for j in range(0, numb):
             counters[j] = 0
-        total = 10000000
+        total = 1000000
         for i in range(1, total):
             res = self.rg.select_index_randomly(numb)
             if res is not None:
                 counters[res] += 1
+        expected = []
+        observed = []
         for j in range(0, numb):
-            print(
-                str(j) + " chosen " + str(counters[j]) + " times, expected " + str(total * (j+1) / (numb * (numb + 1) / 2)))
+            expected.append(total * (j + 1) / (numb * (numb + 1) / 2))
+            observed.append(counters[j])
+
+        # normalize the data such that the observed and expected frequencies have the same sum
+        again = True
+        while again:
+            try:
+                for j in range(0, numb):
+                    observed[j] = observed[j] * sum(expected) / sum(observed)
+                result = stats.chisquare(f_obs=observed, f_exp=expected)
+                again = False
+            except ValueError:
+                pass
+
+        print("expected: " + str(expected) + ", sum = " + str(sum(expected)))
+        print("observed: " + str(observed) + ", sum = " + str(sum(observed)))
+        result = stats.chisquare(f_obs=observed, f_exp=expected)
+        print(result)
+        # fail if chi square pvalue is smaller than 5%
+        self.assertGreater(result[1], 0.05)
