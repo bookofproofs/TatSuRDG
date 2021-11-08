@@ -1,4 +1,4 @@
-import tatsu
+import tatsu.grammars
 import random
 import sys
 import rstr
@@ -11,12 +11,24 @@ class RuleInfo:
         self.grammar = None
 
 
-class TatSuRandomDerivation:
-    version = "1.0.1"
+class TatSuRDG:
+    """
+    The class TatSuRDG provides a functionality to generate derivations of grammars
+    compiled into a TatSu parser randomly
+    """
+    version = "1.0.2"
 
-    def __init__(self, parser, max_length_regex=5, max_counter=50, recursion_limit=1000, override_placeholders=dict()):
+    def __init__(self, parser, max_length_regex=5, max_counter=5, recursion_limit=1000, override_placeholders=dict()):
+        """
+        :param parser: a compiled TatSu parser for some grammar
+        :param max_length_regex: TatSuRDG will try to limit the derivations for all terminals of the grammar with a regex patterns to this length
+        :param max_counter: While generating a derivation, TatSuRDG might 'visit' a choice rule (a|b|..) multiple times. TatSuRDG will select all options randomly until each has been chosen max_counter of times. From then on, TatSuRDG will select only the LAST option. Since TatSu parsers are PEG parsers, the last option is the 'most simple' one. max_counter prevents infinite derivations or derivations becoming too complex.
+        :param recursion_limit: If you encounter RecursionError try to increase the default value for complex grammars.
+        :param override_placeholders: Overrides the default derivations of single rules by deriving a placeholder for them. The dictionary is a key value list where the key is the name of the rule and the value is a string representing the placeholder.
+        """
         self.parser = parser
-        self.override_placeholders = override_placeholders  # dict of rules whose derivations will be replaced by placeholder values
+        # dict of rules whose derivations will be replaced by placeholder values
+        self.override_placeholders = override_placeholders
         self.max_counter = max_counter
         self.choice_rules = dict()
         self._visited = set()
@@ -25,13 +37,12 @@ class TatSuRandomDerivation:
         self.max_length_regex = max_length_regex
         sys.setrecursionlimit(recursion_limit)
         print("TatSu Random Derivation Generator ({0}) initialized with {1}".format(self.version,
-              str(sys.getrecursionlimit())))
+                                                                                    str(sys.getrecursionlimit())))
 
     def random_derivation(self, rule):
         self._visit(rule)
         if str(rule) in self.override_placeholders:
             return str(self.override_placeholders[str(rule)])
-        tatsu_rule_object = None
         if type(rule) is not str:
             # we have a tatsu grammars object
             tatsu_rule_object = rule
@@ -83,7 +94,7 @@ class TatSuRandomDerivation:
                 r -= 1
             return ret
         elif type(tatsu_rule_object) is tatsu.grammars.Named:
-            # e.g. somename:{x}+ or somename:{x}*
+            # e.g. some_name:{x}+ or some_name:{x}*
             return self.random_derivation(tatsu_rule_object.exp)
         elif type(tatsu_rule_object) is tatsu.grammars.Closure:
             # e.g. { x }*
@@ -164,7 +175,6 @@ class TatSuRandomDerivation:
             self._init_rules_rek(rule)
 
     def _init_rules_rek(self, rule):
-        tatsu_rule_object = None
         rule_found = True
         if type(rule) is not str:
             # we have a tatsu grammars object
@@ -214,7 +224,7 @@ class TatSuRandomDerivation:
                 self._init_rules_rek(tatsu_rule_object.JOINOP)  # register s
                 self._init_rules_rek(tatsu_rule_object.exp)  # register x
             elif type(tatsu_rule_object) is tatsu.grammars.Named:
-                # e.g. somename:{x}+
+                # e.g. some_name:{x}+
                 self._init_rules_rek(tatsu_rule_object.exp)
             elif type(tatsu_rule_object) is tatsu.grammars.RuleRef:
                 # e.g. x
@@ -292,17 +302,17 @@ class TatSuRandomDerivation:
             raise ValueError(str(n) + " must be a positive integer")
         elif n <= 0:
             raise ValueError(str(n) + " must be a positive integer")
-        r = random.randint(1, n * (n + 1) / 2)
+        r = random.randint(1, n * (n + 1) // 2)
         i = 0
-        sum = 0
+        total = 0
         while i <= n:
             i += 1
-            sum += i
-            if sum >= r:
+            total += i
+            if total >= r:
                 break
         if i > n:
             return None
-        elif sum >= r:
+        elif total >= r:
             return i - 1
         else:
             return None
