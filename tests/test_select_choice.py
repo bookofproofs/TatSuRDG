@@ -1,4 +1,4 @@
-from tatsurd import TatSuRandomDerivation
+from tatsurd import TatSuRDG
 import os
 import io
 import tatsu
@@ -23,7 +23,7 @@ class TatSuRDTests(unittest.TestCase):
         with io.open(cls.path_to_grammar, 'r', encoding="utf-8") as file:
             grammar = file.read()
             cls.parser = tatsu.compile(grammar)
-            cls.rg = TatSuRandomDerivation(cls.parser, max_length_regex=10, max_counter=5, recursion_limit=1500)
+            cls.rg = TatSuRDG(cls.parser, max_length_regex=10, max_counter=5, recursion_limit=1500)
 
     def test_select_choice_n(self):
         counters = dict()
