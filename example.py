@@ -13,11 +13,13 @@ class ExampleRandomDerivation:
         self.rg = TatSuRDG(self.parser, max_length_regex=5, max_counter=5, recursion_limit=1500,
                            override_placeholders=override_placeholders)
 
-    def derive(self, rule_name):
-        return self.rg.random_derivation(rule_name)
+    def derive(self, rule_name, trace):
+        return self.rg.random_derivation(rule_name, trace)
 
 
-ex = ExampleRandomDerivation("fpl.ebnf", {"IW":""})
+ex = ExampleRandomDerivation("fpl.ebnf", {"IW": "", "LongComment": "", "Comment": ""})
 for i in range(1, 50):
     ex.rg.init_rules()
-    print(ex.derive("TypeWithCoord"))
+    trace = []
+    print(ex.derive("PredicateWithArguments", trace))
+    print(str(trace))

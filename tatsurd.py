@@ -39,8 +39,8 @@ class TatSuRDG:
         print("TatSu Random Derivation Generator ({0}) initialized with {1}".format(self.version,
                                                                                     str(sys.getrecursionlimit())))
 
-    def random_derivation(self, rule):
-        self._visit(rule)
+    def random_derivation(self, rule, trace=None):
+        self._visit(rule, trace)
         if str(rule) in self.override_placeholders:
             return str(self.override_placeholders[str(rule)])
         if type(rule) is not str:
@@ -57,7 +57,7 @@ class TatSuRDG:
             # e.g. "x y z"
             ret = ""
             for sequence_elem in tatsu_rule_object.sequence:
-                ret += self.random_derivation(sequence_elem)
+                ret += self.random_derivation(sequence_elem, trace)
             return ret
         elif type(tatsu_rule_object) is tatsu.grammars.Pattern:
             # e.g. "/\d+/"
@@ -80,28 +80,28 @@ class TatSuRDG:
             return str(tatsu_rule_object.ast)
         elif type(tatsu_rule_object) is tatsu.grammars.Group:
             # e.g. (x)
-            return self.random_derivation(tatsu_rule_object.exp)
+            return self.random_derivation(tatsu_rule_object.exp, trace)
         elif type(tatsu_rule_object) is tatsu.grammars.Choice:
             # e.g. (x | y)
             option = self.select_choice(str(tatsu_rule_object))
-            return self.random_derivation(option)
+            return self.random_derivation(option, trace)
         elif type(tatsu_rule_object) is tatsu.grammars.PositiveClosure:
             # e.g. { x }+ or
             r = random.randint(1, 3)
             ret = ""
             while r > 0:
-                ret += self.random_derivation(tatsu_rule_object.exp)
+                ret += self.random_derivation(tatsu_rule_object.exp, trace)
                 r -= 1
             return ret
         elif type(tatsu_rule_object) is tatsu.grammars.Named:
             # e.g. some_name:{x}+ or some_name:{x}*
-            return self.random_derivation(tatsu_rule_object.exp)
+            return self.random_derivation(tatsu_rule_object.exp, trace)
         elif type(tatsu_rule_object) is tatsu.grammars.Closure:
             # e.g. { x }*
             r = random.randint(0, 2)
             ret = ""
             while r > 0:
-                ret += self.random_derivation(tatsu_rule_object.exp)
+                ret += self.random_derivation(tatsu_rule_object.exp, trace)
                 r -= 1
             return ret
         elif type(tatsu_rule_object) is tatsu.grammars.PositiveGather:
@@ -109,47 +109,47 @@ class TatSuRDG:
             r = random.randint(1, 3)
             ret = ""
             while r > 0:
-                ret += self.random_derivation(tatsu_rule_object.JOINOP)
-                ret += self.random_derivation(tatsu_rule_object.exp)
+                ret += self.random_derivation(tatsu_rule_object.JOINOP, trace)
+                ret += self.random_derivation(tatsu_rule_object.exp, trace)
                 r -= 1
             return ret
         elif type(tatsu_rule_object) is tatsu.grammars.RuleRef:
             # e.g. x
             # return the expansion of the referenced rule
-            return self.random_derivation(tatsu_rule_object.ast)
+            return self.random_derivation(tatsu_rule_object.ast, trace)
         elif type(tatsu_rule_object) is tatsu.grammars.Rule:
             # e.g. x
             # return the expansion of the rule
-            return self.random_derivation(tatsu_rule_object.exp)
+            return self.random_derivation(tatsu_rule_object.exp, trace)
         elif type(tatsu_rule_object) is tatsu.grammars.NamedList:
             # e.g. name+:x
-            return self.random_derivation(tatsu_rule_object.exp)
+            return self.random_derivation(tatsu_rule_object.exp, trace)
         elif type(tatsu_rule_object) is tatsu.grammars.NegativeLookahead:
             # e.g. !x
             # TatSu parser will fail if x can be parsed but does not consume any input
             # we want derivations anyway
-            return self.random_derivation(tatsu_rule_object.exp)
+            return self.random_derivation(tatsu_rule_object.exp, trace)
         elif type(tatsu_rule_object) is tatsu.grammars.Lookahead:
             # e.g. &x will succeed if x can be parsed but does not consume any input
             # we want derivations anyway
-            return self.random_derivation(tatsu_rule_object.exp)
+            return self.random_derivation(tatsu_rule_object.exp, trace)
         elif type(tatsu_rule_object) is tatsu.grammars.Cut:
             # e.g. ~
             return ""  # ignore, since we are deriving already the option, other options are cut anyway
         elif type(tatsu_rule_object) is tatsu.grammars.Override:
             # e.g. y = '(' @:x ')' (makes the AST for y to be the AST for x
             # ignore, since we are interested not in the AST but in the syntactical derivations
-            return self.random_derivation(tatsu_rule_object.exp)
+            return self.random_derivation(tatsu_rule_object.exp, trace)
         elif type(tatsu_rule_object) is tatsu.grammars.OverrideList:
             # e.g. y = '(' @+:x ')' (makes the AST for y to be the AST for x and forces it to be a list)
             # ignore, since we are interested not in the AST but in the syntactical derivations
-            return self.random_derivation(tatsu_rule_object.exp)
+            return self.random_derivation(tatsu_rule_object.exp, trace)
         elif type(tatsu_rule_object) is tatsu.grammars.Optional:
             # e.g. [x]
             r = random.randint(0, 1)
             if r > 0:
                 # chance 50% the option will be derived
-                return self.random_derivation(tatsu_rule_object.exp)
+                return self.random_derivation(tatsu_rule_object.exp, trace)
             else:
                 return ""
         elif type(tatsu_rule_object) is tatsu.grammars.Void:
@@ -162,12 +162,15 @@ class TatSuRDG:
             # e.g. >x
             # includable = exp1 ; expanded = exp0 >includable exp2; has the same effect as defining expanded as:
             # expanded = exp0 exp1 exp2;
-            return self.random_derivation(tatsu_rule_object.exp)
+            return self.random_derivation(tatsu_rule_object.exp, trace)
         else:
             raise TypeError(str(type(tatsu_rule_object)))
 
-    def _visit(self, tatsu_rule_object):
+    def _visit(self, tatsu_rule_object, trace=None):
         self.counters[str(tatsu_rule_object)].visit_counter += 1
+        if trace is not None:
+            if hasattr(tatsu_rule_object, "name"):
+                trace.append(tatsu_rule_object.name)
 
     def init_rules(self):
         self._visited.clear()

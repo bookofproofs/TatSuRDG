@@ -1,4 +1,4 @@
-# fpl Version 1.1.0
+# fpl Version 1.1.1
 
 @@grammar::fpl
 @@parseinfo :: True
@@ -598,7 +598,6 @@
         (
         Type
         | Variable
-        | extDigit
         )
         ;
 
@@ -928,6 +927,7 @@
         | false
         | UndefinedHeader
         | ArgumentParam
+        | extDigit
         )
         ;
 
@@ -948,7 +948,6 @@
         | AmpersandVariable
         | IndexValue
         | Assignee
-        | extDigit
         )
         ;
 
@@ -1339,7 +1338,7 @@
         ;
 
     IW =
-        /[ ]/
+        /[ \r\n\t]+/
         ;
 
     # convention: All syntax production rules of FPL syntax extensions have to start with "ext", followed by
